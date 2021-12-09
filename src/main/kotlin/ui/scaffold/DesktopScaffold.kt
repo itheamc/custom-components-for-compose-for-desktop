@@ -20,6 +20,8 @@ fun DesktopScaffold(
     bottomBar: @Composable () -> Unit = {},
     navigationRail: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
+    verticalScrollBar: @Composable () -> Unit = {},
+    horizontalScrollBar: @Composable () -> Unit = {},
     containerColor: Color = MaterialTheme.colors.background,
     contentColor: Color = contentColorFor(containerColor),
     content: @Composable (PaddingValues) -> Unit,
@@ -36,6 +38,8 @@ fun DesktopScaffold(
                     snackbarHost(scaffoldState.snackbarHostState)
                 },
                 fab = floatingActionButton,
+                verticalScrollBar = verticalScrollBar,
+                horizontalScrollBar = horizontalScrollBar
             )
         }
     }
@@ -58,10 +62,13 @@ private fun DesktopScaffoldLayout(
     content: @Composable (PaddingValues) -> Unit,
     fab: @Composable () -> Unit,
     snackbar: @Composable () -> Unit,
+    verticalScrollBar: @Composable() () -> Unit,
+    horizontalScrollBar: @Composable() () -> Unit,
 ) {
     SubcomposeLayout { constraints ->
         val layoutWidth = constraints.maxWidth
         val layoutHeight = constraints.maxHeight
+        val contentMargin = 0.dp.roundToPx()
 
         val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
 
@@ -142,40 +149,81 @@ private fun DesktopScaffoldLayout(
             val navigationRailWidth = navigationRailPlaceables.maxByOrNull { it.width }?.width ?: 0
 
             /*
+            ----------------------------------------------------------------
+            Horizontal ScrollBar Placement
+             */
+            val horizontalScrollBarPlaceable =
+                subcompose(
+                    slotId = DesktopScaffoldLayoutContent.HorizontalScrollBar,
+                    content = horizontalScrollBar
+                ).map { measurable ->
+                    measurable.measure(
+                        looseConstraints.copy(
+                            maxWidth = layoutWidth - navigationRailWidth
+                        )
+                    )
+                }
+
+            val horizontalScrollBarHeight = horizontalScrollBarPlaceable.maxByOrNull { it.height }?.height ?: 0
+            val horizontalScrollBarYOffset = layoutHeight - bottomBarHeight - horizontalScrollBarHeight
+
+
+            /*
+            ----------------------------------------------------------------
+            Vertical ScrollBar Placement
+             */
+            val verticalScrollBarPlaceable =
+                subcompose(
+                    slotId = DesktopScaffoldLayoutContent.VerticalScrollBar,
+                    content = verticalScrollBar
+                ).map { measurable ->
+                    measurable.measure(
+                        looseConstraints.copy(
+                            maxHeight = layoutHeight - topBarHeight - bottomBarHeight - horizontalScrollBarHeight
+                        )
+                    )
+                }
+
+            val verticalScrollBarWidth = verticalScrollBarPlaceable.maxByOrNull { it.width }?.width ?: 0
+            val verticalScrollBarXOffset = layoutWidth - verticalScrollBarWidth
+
+            /*
             ----------------------------------------------------------
             Fab Offset Bottom
              */
             val fabOffsetFromBottom = fabPlacement?.let {
-                bottomBarHeight + it.height + FabSpacing.roundToPx()
+                bottomBarHeight + horizontalScrollBarHeight + it.height + FabSpacing.roundToPx()
             }
 
             /*
+            Snackbar Placeable
             ----------------------------------------------------------
              */
             val snackbarPlaceables = subcompose(DesktopScaffoldLayoutContent.Snackbar, snackbar).map {
-                it.measure(looseConstraints.copy(
-                    maxWidth = (layoutWidth * 0.40).roundToInt()
-                ))
+                it.measure(
+                    looseConstraints.copy(
+                        maxWidth = (layoutWidth * 0.40).roundToInt()
+                    )
+                )
             }
 
             val snackbarHeight = snackbarPlaceables.maxByOrNull { it.height }?.height ?: 0
             val snackbarWidth = snackbarPlaceables.maxByOrNull { it.width }?.width ?: 0
 
             val snackbarOffsetFromBottom = if (snackbarHeight != 0) {
-                snackbarHeight + (fabOffsetFromBottom ?: bottomBarHeight)
+                snackbarHeight + bottomBarHeight + horizontalScrollBarHeight
             } else {
                 0
             }
 
-            val snackbarOffsetFromLeft = (layoutWidth/2) - (snackbarWidth/2)
-
+            val snackbarOffsetFromLeft = (layoutWidth / 2) - (snackbarWidth / 2)
 
             /*
             -----------------------------------------------------------------
             Content container Width and Height
              */
-            val bodyContentHeight = layoutHeight - topBarHeight - bottomBarHeight
-            val bodyContentWidth = layoutWidth - navigationRailWidth
+            val bodyContentHeight = layoutHeight - topBarHeight - bottomBarHeight - horizontalScrollBarHeight - (contentMargin * 2)
+            val bodyContentWidth = layoutWidth - navigationRailWidth - verticalScrollBarWidth - (contentMargin * 2)
 
             /*
             ----------------------------------------------------------------------
@@ -198,7 +246,7 @@ private fun DesktopScaffoldLayout(
              Placing to control drawing order to match default elevation of each placeable
              */
             bodyContentPlaceable.forEach {
-                it.place(navigationRailWidth, topBarHeight)
+                it.place(navigationRailWidth + contentMargin, topBarHeight + contentMargin)
             }
             /*
             Top Bar Placeable
@@ -227,6 +275,26 @@ private fun DesktopScaffoldLayout(
                 it.place(
                     x = navigationRailWidth,
                     y = layoutHeight - bottomBarHeight
+                )
+            }
+
+            /*
+           Vertical Scroll Bar Bar placeable
+            */
+            verticalScrollBarPlaceable.forEach {
+                it.place(
+                    x = verticalScrollBarXOffset,
+                    y = topBarHeight
+                )
+            }
+
+            /*
+          Horizontal Scroll Bar Bar placeable
+           */
+            horizontalScrollBarPlaceable.forEach {
+                it.place(
+                    x = navigationRailWidth,
+                    y = horizontalScrollBarYOffset
                 )
             }
 
@@ -295,4 +363,4 @@ internal val LocalFabPlacement = staticCompositionLocalOf<FabPlacement?> { null 
 // FAB spacing above the bottom bar / bottom of the Scaffold
 private val FabSpacing = 16.dp
 
-private enum class DesktopScaffoldLayoutContent { TopBar, MainContent, Fab, BottomBar, NavigationRail, Snackbar }
+private enum class DesktopScaffoldLayoutContent { TopBar, MainContent, Fab, BottomBar, NavigationRail, Snackbar, VerticalScrollBar, HorizontalScrollBar }
