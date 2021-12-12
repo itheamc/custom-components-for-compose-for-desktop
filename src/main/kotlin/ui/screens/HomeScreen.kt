@@ -11,13 +11,14 @@ import navcontroller.NavController
 
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
     navController: NavController
 ) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(navController.screen.value.label)
+        Text(navController.currentScreen.value.label)
     }
 }

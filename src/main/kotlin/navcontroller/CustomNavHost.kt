@@ -9,19 +9,19 @@ fun CustomNavHost(
 ) {
     NavigationHost(navController) {
         composable(Screen.HomeScreen) {
-            HomeScreen(it)
+            HomeScreen(it, navController)
         }
 
         composable(Screen.NotificationScreen) {
-            NotificationScreen(it)
+            NotificationScreen(it, navController)
         }
 
         composable(Screen.SettingsScreen) {
-            SettingsScreen(it)
+            SettingsScreen(it, navController)
         }
 
         composable(Screen.DetailsScreen) {
-            DetailsScreen(it)
+            DetailsScreen(it, navController)
         }
     }.build()
 }

@@ -1,46 +1,51 @@
 package navcontroller
 
+import ui.screens.Screen
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import ui.screens.Screen
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import kotlinx.coroutines.delay
 
 
 /**
  * NavController
  */
 class NavController(
-    private var currentScreen: Screen,
-    private var lastScreens: MutableSet<Screen>,
+    private val startDestination: Screen,
+    private var backStackScreens: MutableSet<Screen>,
 ) {
 
-    var screen: MutableState<Screen> = mutableStateOf(currentScreen)
+    var currentScreen: MutableState<Screen> = mutableStateOf(startDestination)
 
     fun navigate(scr: Screen) {
-        if (scr != currentScreen) {
-            if (lastScreens.contains(currentScreen) && currentScreen != Screen.HomeScreen) {
-                lastScreens.remove(currentScreen)
+        if (scr != currentScreen.value) {
+            if (backStackScreens.contains(currentScreen.value) && currentScreen.value != startDestination) {
+                backStackScreens.remove(currentScreen.value)
             }
 
-            if (scr == Screen.HomeScreen) {
-                lastScreens = mutableSetOf()
+            if (scr == startDestination) {
+                backStackScreens = mutableSetOf()
             } else {
-                lastScreens.add(currentScreen)
+                backStackScreens.add(currentScreen.value)
             }
 
-            currentScreen = scr
-            screen.value = scr
+            currentScreen.value = scr
         }
-        println(lastScreens)
+        println(backStackScreens)
     }
 
     fun navigateBack() {
-        if (lastScreens.isNotEmpty()) {
-            currentScreen = lastScreens.last()
-            screen.value = currentScreen
-            lastScreens.remove(currentScreen)
+        if (backStackScreens.isNotEmpty()) {
+            currentScreen.value = backStackScreens.last()
+            backStackScreens.remove(currentScreen.value)
         }
     }
 
@@ -49,10 +54,10 @@ class NavController(
 
 @Composable
 fun rememberNavController(
-    currentScreen: Screen = Screen.HomeScreen,
-    lastScreens: MutableSet<Screen> = mutableSetOf()
+    startDestination: Screen,
+    backStackScreens: MutableSet<Screen> = mutableSetOf()
 ): MutableState<NavController> = rememberSaveable {
-    mutableStateOf(NavController(currentScreen, lastScreens))
+    mutableStateOf(NavController(startDestination, backStackScreens))
 }
 
 
@@ -61,15 +66,17 @@ fun rememberNavController(
  */
 class NavigationHost(
     val navController: NavController,
-    val contents: @Composable Builder.() -> Unit
+    val contents: @Composable NavigationGraphBuilder.() -> Unit
 ) {
 
     @Composable
     fun build() {
-        Builder().render()
+        NavigationGraphBuilder().render()
     }
 
-    inner class Builder(val navController: NavController = this@NavigationHost.navController) {
+    inner class NavigationGraphBuilder(
+        val navController: NavController = this@NavigationHost.navController,
+    ) {
         @Composable
         fun render() {
             this@NavigationHost.contents(this)
@@ -79,11 +86,28 @@ class NavigationHost(
 
 
 @Composable
-fun NavigationHost.Builder.composable(
+fun NavigationHost.NavigationGraphBuilder.composable(
     route: Screen,
-    content: @Composable (NavController) -> Unit
+    content: @Composable (Modifier) -> Unit
 ) {
-    if (navController.screen.value == route) {
-        content(navController)
+    if (navController.currentScreen.value == route) {
+        var timeout by remember {
+            mutableStateOf(false)
+        }
+        val alpha by animateFloatAsState(
+            targetValue = if (timeout) 1f else 0f,
+            animationSpec = tween(750)
+        )
+
+        LaunchedEffect(Unit) {
+            delay(100)
+            timeout = true
+        }
+
+        content(
+            Modifier
+                .fillMaxSize()
+                .alpha(alpha)
+        )
     }
 }

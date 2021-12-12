@@ -48,7 +48,7 @@ fun App(scrollbarState: ScrollbarState) {
 
     val navController by rememberNavController(Screen.HomeScreen)
     val currentScreen by remember {
-        navController.screen
+        navController.currentScreen
     }
 
     /**
