@@ -7,25 +7,21 @@ import ui.screens.*
 fun CustomNavHost(
     navController: NavController,
 ) {
-    NavigationHost(navController).Builder()
-}
+    NavigationHost(navController) {
+        composable(Screen.HomeScreen) {
+            HomeScreen(it)
+        }
 
+        composable(Screen.NotificationScreen) {
+            NotificationScreen(it)
+        }
 
-@Composable
-fun NavigationHost.Builder() {
-    composable(Screen.HomeScreen) {
-        HomeScreen(it)
-    }
+        composable(Screen.SettingsScreen) {
+            SettingsScreen(it)
+        }
 
-    composable(Screen.NotificationScreen) {
-        NotificationScreen(it)
-    }
-
-    composable(Screen.SettingsScreen) {
-        SettingsScreen(it)
-    }
-
-    composable(Screen.DetailsScreen) {
-        DetailsScreen(it)
-    }
+        composable(Screen.DetailsScreen) {
+            DetailsScreen(it)
+        }
+    }.build()
 }

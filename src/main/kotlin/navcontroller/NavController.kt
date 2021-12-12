@@ -60,15 +60,30 @@ fun rememberNavController(
  * Navigation Host
  */
 class NavigationHost(
-    val navController: NavController
+    val navController: NavController,
+    val contents: @Composable Builder.() -> Unit
 ) {
+
     @Composable
-    fun composable(
-        route: Screen,
-        content: @Composable (NavController) -> Unit
-    ) {
-        if (navController.screen.value == route) {
-            content(navController)
+    fun build() {
+        Builder().render()
+    }
+
+    inner class Builder(val navController: NavController = this@NavigationHost.navController) {
+        @Composable
+        fun render() {
+            this@NavigationHost.contents(this)
         }
+    }
+}
+
+
+@Composable
+fun NavigationHost.Builder.composable(
+    route: Screen,
+    content: @Composable (NavController) -> Unit
+) {
+    if (navController.screen.value == route) {
+        content(navController)
     }
 }
