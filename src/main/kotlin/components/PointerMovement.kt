@@ -8,6 +8,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -17,10 +18,11 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerMoveFilter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.jetbrains.skija.Font
-import org.jetbrains.skija.Paint
+import org.jetbrains.skia.Font
+import org.jetbrains.skia.Paint
 import kotlin.random.Random
 
+@ExperimentalComposeUiApi
 @ExperimentalFoundationApi
 @Composable
 fun MakeSomeFun() {
@@ -139,7 +141,7 @@ fun MakeSomeFun() {
                             this.size = (offset.y + 100) / 10
                         },
                         Paint().apply {
-                            color = org.jetbrains.skija.Color.makeARGB(255, 200, 75, 240)
+                            color = org.jetbrains.skia.Color.makeARGB(255, 200, 75, 240)
                         }
                     )
                 }

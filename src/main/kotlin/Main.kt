@@ -3,31 +3,34 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateOffsetAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.desktop.DesktopMaterialTheme
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import kotlinx.coroutines.launch
+import navcontroller.CustomNavHost
+import navcontroller.rememberNavController
 import ui.navigation.ScrollbarState
 import ui.navigation.rememberScrollbarState
 import ui.scaffold.DesktopScaffold
 import ui.scaffold.rememberDesktopScaffoldState
-import kotlin.random.Random
+import ui.screens.Screen
 
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
@@ -38,6 +41,15 @@ fun App(scrollbarState: ScrollbarState) {
 
     val scaffoldState = rememberDesktopScaffoldState()
     val scope = rememberCoroutineScope()
+    val screns = Screen.values().toList()
+    var selected by remember {
+        mutableStateOf(Screen.HomeScreen)
+    }
+
+    val navController by rememberNavController(Screen.HomeScreen)
+    val currentScreen by remember {
+        navController.screen
+    }
 
     /**
      * For Navigation Rail Animation
@@ -55,14 +67,32 @@ fun App(scrollbarState: ScrollbarState) {
         animationSpec = tween(500)
     )
 
-    DesktopMaterialTheme {
+    LaunchedEffect(visible) {
+        println(currentScreen)
+    }
+
+    MaterialTheme {
         DesktopScaffold(
             scaffoldState = scaffoldState,
             topBar = {
                 TopAppBar(
                     title = {
-                        Text("Dashboard")
-                    }
+                        Text(currentScreen.label)
+                    },
+                    navigationIcon = if (!currentScreen.primary) {
+                        {
+                            IconButton(
+                                onClick = {
+                                    navController.navigateBack()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ArrowBack,
+                                    contentDescription = null
+                                )
+                            }
+                        }
+                    } else null
                 )
             },
             bottomBar = {
@@ -70,7 +100,10 @@ fun App(scrollbarState: ScrollbarState) {
             },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { visible = !visible },
+                    onClick = {
+//                        visible = !visible,
+                        navController.navigate(Screen.DetailsScreen)
+                    },
                     content = {
                         Icon(
                             imageVector = Icons.Filled.Search,
@@ -83,22 +116,27 @@ fun App(scrollbarState: ScrollbarState) {
                 NavigationRail(
                     modifier = Modifier.width(width).offset(offset.x.dp, offset.y.dp),
                 ) {
-                    NavigationRailItem(
-                        selected = true,
-                        onClick = {
-                            scope.launch { scaffoldState.snackbarHostState.showSnackbar("Hello Snackbar") }
-                        },
-                        label = {
-                            Text("Home")
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Filled.Home,
-                                contentDescription = null
+                    screns.forEach {
+                        if (it.primary) {
+                            NavigationRailItem(
+                                selected = it == currentScreen,
+                                onClick = {
+                                    selected = it
+                                    navController.navigate(it)
+                                },
+                                label = {
+                                    Text(it.label)
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = it.icon,
+                                        contentDescription = it.label
+                                    )
+                                },
+                                alwaysShowLabel = false
                             )
-                        },
-                        alwaysShowLabel = false
-                    )
+                        }
+                    }
                 }
             },
             verticalScrollBar = {
@@ -112,31 +150,31 @@ fun App(scrollbarState: ScrollbarState) {
                 )
             }
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().verticalScroll(scrollbarState.scrollState),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                repeat(100) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().height(100.dp).background(
-                            color = Color(
-                                alpha = 255,
-                                red = Random.nextInt(256),
-                                green = Random.nextInt(256),
-                                blue = Random.nextInt(256)
-                            )
-                        )
-                    ) {
-                        Text("Hi", modifier = Modifier.combinedClickable(
-                            onClick = { visible = !visible }
-                        ))
-
-                        Text("Hi", modifier = Modifier.combinedClickable(
-                            onClick = { visible = !visible }
-                        ).align(Alignment.CenterEnd))
-                    }
-                }
-            }
+//            Column(
+//                modifier = Modifier.fillMaxWidth().verticalScroll(scrollbarState.scrollState),
+//                verticalArrangement = Arrangement.spacedBy(16.dp)
+//            ) {
+//                repeat(100) {
+//                    Box(
+//                        modifier = Modifier.fillMaxWidth().height(100.dp).background(
+//                            color = Color(
+//                                alpha = 255,
+//                                red = Random.nextInt(256),
+//                                green = Random.nextInt(256),
+//                                blue = Random.nextInt(256)
+//                            )
+//                        )
+//                    ) {
+//                        Text("Hi", modifier = Modifier.combinedClickable(
+//                            onClick = { visible = !visible }
+//                        ))
+//
+//                        Text("Hi", modifier = Modifier.combinedClickable(
+//                            onClick = { visible = !visible }
+//                        ).align(Alignment.CenterEnd))
+//                    }
+//                }
+            CustomNavHost(navController)
         }
     }
 }
